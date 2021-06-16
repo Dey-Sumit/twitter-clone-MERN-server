@@ -32,3 +32,12 @@ export const addPostToTag = async (tag: ITag, post: IPost) => {
     }
   );
 };
+
+// export const getPostById = async (id:string) => {
+//   const post = await Post.findById(id);
+
+//   if (!post) {
+//     Response.status(404);
+//     throw new Error("Resource not Found");
+//   }
+// };

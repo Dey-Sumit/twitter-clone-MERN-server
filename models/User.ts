@@ -34,7 +34,6 @@ const UserSchema = new Schema<UserDocument>(
     password: {
       type: String,
       required: true,
-      select: false,
     },
     // people follow this user
     followers: [
@@ -57,6 +56,7 @@ const UserSchema = new Schema<UserDocument>(
         ref: "Post",
       },
     ],
+    likes: [{ type: Schema.Types.ObjectId, ref: "Post" }],
   },
   {
     timestamps: true,

@@ -16,14 +16,16 @@ export function errorHandler(
   res: Response,
   next: NextFunction //  because next is not used,don't omit that, else it will not work:) I spend my entire day to debug this
 ) {
+  let message: string;
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-
+  if (err.name == "CastError") message = "Invalid resource Id";
+  else message = err.message;
   res.status(statusCode);
   // if (err.kind === "ObjectId")
   //     return res.status(404).json({ msg: "Post not found" });
 
-  console.error(process.env.NODE_ENV === "production" ? "🍰" : err.stack);
+  // console.error(process.env.NODE_ENV === "production" ? "🍰" : err.stack);
   res.json({
-    message: err.message,
+    message,
   });
 }

@@ -12,15 +12,11 @@ import { Strategy as LocalStratagy } from "passport-local";
 // http://www.passportjs.org/docs/downloads/html/
 
 // HOW PASSPORT WORKS : http://toon.io/understanding-passportjs-authentication-flow/
-
 const findUserByUsername = async (username: string) => {
-  console.log("findUserByUsername");
-
   return await UserModel.findOne({ username });
 };
-const findUserById = async (id: string) => {
-  console.log("findUserById");
 
+const findUserById = async (id: string) => {
   return await UserModel.findById(id);
 };
 
@@ -50,8 +46,6 @@ passport.use(
 
 // put the data(user id) into the session
 passport.serializeUser((user: any, done) => {
-  console.log("serializeUser");
-
   done(null, user._id);
 });
 
@@ -59,7 +53,6 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser(async (req: Request, id: string, done: any) => {
   try {
     const user = await findUserById(id);
-    console.log("deserializeUser user");
 
     done(null, user);
   } catch (error) {

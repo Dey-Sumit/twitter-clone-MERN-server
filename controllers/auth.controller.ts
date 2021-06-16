@@ -5,7 +5,7 @@ import extractUser from "libs/extractUser";
 import User from "models/User";
 
 export const login = (req, res) => {
-  res.json(req.user);
+  res.json(extractUser(req.user));
 };
 
 export const logout = (req, res) => {

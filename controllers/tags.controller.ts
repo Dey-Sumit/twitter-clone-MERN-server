@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
+import createError from "http-errors";
 import Tag from "models/Tag";
 
 // @ route GET /api/tags/
@@ -32,9 +33,7 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
     path: "posts",
     populate: [{ path: "tags", select: "name" }, { path: "user" }],
   });
-  console.log(data);
 
-  if (data.length == 0)
-    return res.status(404).json({ msg: "Tag does not exist" });
+  if (data.length == 0) throw new createError.NotFound("Tag does not exist");
   return res.status(200).json(data[0]);
 });

@@ -19,6 +19,7 @@ export interface IUser {
   bio: string;
   following: mongoose_id[];
   followers: mongoose_id[];
+  likes: mongoose_id[];
   // virtual fields
   noOfFollowers: number;
   noOfFollowing: number;

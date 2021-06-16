@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
 
 import authRoutes from "@routes/auth.route";
 import userRoutes from "@routes/user.route";
@@ -27,7 +29,11 @@ app.use(
     credentials: true,
   })
 );
-
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -37,7 +43,7 @@ app.use(passport.session());
 
 app.use("/api/auth", authRoutes);
 // app.use("/api/users", userRoutes);
-// app.use("/api/posts", postRoutes);
+app.use("/api/posts", postRoutes);
 // app.use("/api/tags", tagRoutes);
 
 app.use(notFound);
@@ -47,5 +53,3 @@ app.listen(PORT, async () => {
   await connectDB();
   console.log(`Server is running on port ${PORT}`);
 });
-
-interface A {}

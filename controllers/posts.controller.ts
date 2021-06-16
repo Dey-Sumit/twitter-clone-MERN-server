@@ -1,43 +1,41 @@
-import { ExtendedRequest, IPost, ITag } from "libs/types";
+import { ExtendedRequest, IPost } from "libs/types";
 import { NextFunction, Response } from "express";
 import { Post, Tag, User } from "models";
 import { v2 as cloudinary } from "cloudinary";
 import { Types } from "mongoose";
 import expressAsyncHandler from "express-async-handler";
 import { addPostToTag, addTagToPost } from "@services/post.service";
+import createError from "http-errors";
+
 // @desc get user feed posts
 // @route GET /api/posts/feed
 // @access private
 
 export const getFeedByUserId = expressAsyncHandler(
   async (req: ExtendedRequest, res) => {
-    const user = await User.findById(req.query.id);
-    // TODO REVIEW this request
+    let user = req.user;
+
     const { page } = req.query;
-    const pageSize = 10;
+    const pageSize = 3;
     const pageNumber = Number(page) || 0;
 
     let posts: IPost[];
 
+    // https://stackoverflow.com/questions/24035872/return-results-mongoose-in-find-query-to-a-variable
+
     posts = await Post.find({
-      $or: [
-        { user: { $in: user.following } },
-        { user: req.query.id as string },
-      ],
+      $or: [{ user: { $in: user.following } }, { user: user._id }],
     });
     //TODO FIX THIS : better approach we have to repeat the query
 
     const count = posts.length;
 
     posts = await Post.find({
-      $or: [
-        { user: { $in: user.following } },
-        { user: req.query.id as string },
-      ],
+      $or: [{ user: { $in: user.following } }, { user: user._id }],
     })
       .limit(pageSize)
       .skip(pageSize * pageNumber)
-      // .populate("user", "username") // ERROR in selecting specific fields
+      //.populate("user", "username") // TODO ERROR in selecting specific fields
       .populate("tags", "name")
       .populate("user")
       .sort("-createdAt");
@@ -55,12 +53,12 @@ export const getFeedByUserId = expressAsyncHandler(
 // @access private
 
 export const createPost = expressAsyncHandler(
-  async (req, res, next: NextFunction) => {
+  async (req: ExtendedRequest, res, next: NextFunction) => {
     const { content, tags }: { content: string; tags?: string } = req.body;
 
     const tagsArray = tags && [...new Set(tags.split(","))]; // convert to an array and remove duplicates if the tags are present
 
-    if (!content) return res.status(400).json({ msg: "content is required" });
+    if (!content) throw new createError.BadRequest("Content is Required");
 
     // insert post
     let attachmentURL: string, cloudinaryImageId: string;
@@ -187,9 +185,8 @@ export const getPosts = expressAsyncHandler(async (req, res) => {
 // @ access private
 
 export const getPostById = expressAsyncHandler(async (req, res) => {
-  //   console.log(req.params);
+  const { id } = req.params;
 
-  const { id } = req.query; // use req.params in express
   // try {
   const post = await Post.findById(id)
     .populate("user")
@@ -197,43 +194,35 @@ export const getPostById = expressAsyncHandler(async (req, res) => {
     .populate("comments.user")
     .populate("tags", "name");
 
-  if (!post) return res.status(404).json({ msg: "Post not found" }); // TODO is it unnecessary , can we use the error middleware
+  if (!post) throw new createError.NotFound();
   return res.status(200).json(post);
-  // } catch (error) {
-  //   console.log(error.message);
-
-  //   if (error.kind === "ObjectId")
-  //     return res.status(404).json({ msg: "Post not found" });
-  //   res.status(500).json({ msg: "server error" });
-  // }
 });
 
 // @ route DELETE api/posts/:id
 // @ desc delete post by id
 // @ access private
 
-export const deletePostById = expressAsyncHandler(async (req, res) => {
-  const post = await Post.findById(req.query.id);
+export const deletePostById = expressAsyncHandler(
+  async (req: ExtendedRequest, res) => {
+    const post = await Post.findById(req.params.id);
 
-  if (!post) return res.status(404).json({ msg: "Post not found" });
+    if (!post) throw new createError.NotFound();
 
-  if (post.user.toString() !== req.user._id.toString()) {
-    return res
-      .status(401)
-      .json({ msg: " user not authorized; seems like it's not your post" });
+    if (post.user.toString() !== req.user._id.toString())
+      throw new createError.Unauthorized();
+
+    const cloudinaryImageId = post.cloudinaryImageId;
+
+    await post.remove();
+
+    // delete the file
+    cloudinaryImageId &&
+      cloudinary.uploader.destroy(cloudinaryImageId, (result) =>
+        console.log(result)
+      );
+    res.status(200).json({ message: "Post removed" });
   }
-  console.log({ post });
-  const cloudinaryImageId = post.cloudinaryImageId;
-  await post.remove();
-  // do not need to make this async
-  console.log({ cloudinaryImageId });
-
-  cloudinaryImageId &&
-    cloudinary.uploader.destroy(cloudinaryImageId, (result) =>
-      console.log(result)
-    );
-  res.status(200).json({ msg: "Post removed" });
-});
+);
 
 //! not implemented in this project
 // @ route PUT api/posts/:id
@@ -266,43 +255,36 @@ export const deletePostById = expressAsyncHandler(async (req, res) => {
 // @ desc rate post by id
 // @ access private
 
-export const ratePostById = async (req, res) => {
-  const authUserId = req.user._id as Types.ObjectId;
+export const ratePostById = expressAsyncHandler(
+  async (req: ExtendedRequest, res: Response) => {
+    const authUserId = req.user._id;
+    const postId = req.params.id;
 
-  const post = await Post.findById(req.query.id);
+    let post = await Post.findById(req.params.id);
 
-  const { rate }: { rate: Number } = req.body;
+    if (!post) throw new createError.NotFound();
 
-  if (rate !== 1 && rate !== 0) {
-    return res.status(400).json({ msg: "Invalid rating" });
+    // check if the post exist
+
+    const isLiked = req.user.likes && post.likes.includes(authUserId);
+    console.log({ isLiked });
+
+    var option = isLiked ? "$pull" : "$addToSet";
+
+    // Insert user like
+    req.user = await User.findByIdAndUpdate(
+      authUserId,
+      { [option]: { likes: postId } },
+      { new: true }
+    );
+
+    post = await Post.findByIdAndUpdate(
+      postId,
+      { [option]: { likes: authUserId } },
+      { new: true }
+    );
+
+    // add notification
+    res.status(200).json(post);
   }
-
-  if (rate === 1) {
-    // check if the post has already been liked
-    if (
-      post.likes.filter(
-        (like) => like.user.toString() === authUserId.toHexString()
-      ).length > 0
-    ) {
-      return res.status(400).json({ msg: "Post already liked by the user" });
-    }
-    post.likes.unshift({ user: authUserId });
-  } else {
-    if (
-      post.likes.filter(
-        (like) => like.user.toString() === authUserId.toHexString()
-      ).length === 0
-    ) {
-      return res.status(400).json({ msg: "Post is not yet liked by the user" });
-    } else {
-      // get remove index
-      const removeIndex = post.likes
-        .map((like) => like.user)
-        .indexOf(authUserId);
-
-      post.likes.splice(removeIndex, 1);
-    }
-  }
-  await post.save();
-  res.status(200).json({ post });
-};
+);

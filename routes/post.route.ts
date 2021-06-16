@@ -3,6 +3,7 @@ import {
   getCommentsByPostId,
 } from "@controllers/comments.controller";
 import authMiddleware from "@middlewares/auth.middleware";
+import uploadFile from "@middlewares/uploadFile.middleware";
 import {
   createPost,
   deletePostById,
@@ -10,16 +11,20 @@ import {
   getPostById,
   ratePostById,
 } from "controllers/posts.controller";
+
 import express from "express";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, createPost);
-router.get("/:id", getPostById);
-router.delete("/:id", authMiddleware, deletePostById);
-router.get("/:id/comments", getCommentsByPostId);
-router.post("/:id/comments", authMiddleware, createComment);
+router.post("/", authMiddleware, uploadFile().single("attachment"), createPost);
+router.get("/feed", getFeedByUserId); // TODO might be a better fit for user route
+
+router.route("/:id").get(getPostById).delete(authMiddleware, deletePostById);
+
+router
+  .route("/:id/comments")
+  .get(getCommentsByPostId)
+  .post(authMiddleware, createComment);
 router.put("/:id/rate", authMiddleware, ratePostById);
-router.post("/feed/:userId", getFeedByUserId); // TODO might be a better fit for user route
 
 export default router;

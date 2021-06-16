@@ -1,6 +1,6 @@
 import mongoose, { Document } from "mongoose";
-import User from "./User";
-import Tag from "./Tag";
+// import User from "./User";
+// import Tag from "./Tag";
 import { IPost } from "@libs/types";
 
 const Schema = mongoose.Schema;
@@ -10,7 +10,7 @@ const PostSchema = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       // User ? not "User"
-      ref: User,
+      ref: "User",
     },
     // change this to text
     content: {
@@ -31,19 +31,15 @@ const PostSchema = new Schema(
     // array of user objects which only holds userId
     likes: [
       {
-        user: {
-          type: Schema.Types.ObjectId,
-          ref: User,
-        },
-        // likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-        _id: false, //else mongoose will automatically add id; which is unnecessary
+        type: Schema.Types.ObjectId,
+        ref: "User",
       },
     ],
     comments: [
       {
         user: {
           type: Schema.Types.ObjectId,
-          ref: User,
+          ref: "User",
         },
         content: {
           type: String,
