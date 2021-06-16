@@ -1,3 +1,4 @@
+import { ExtendedRequest } from "@libs/types";
 import { Response, Request } from "express";
 import expressAsyncHandler from "express-async-handler";
 
@@ -9,8 +10,8 @@ import { Types } from "mongoose";
 // @ access private
 
 export const createComment = expressAsyncHandler(
-  async (req: Request, res: Response) => {
-    const authUserId = req.user!._id as Types.ObjectId;
+  async (req: ExtendedRequest, res) => {
+    const authUserId = req.user!._id;
     // TODO remove Types.ObjectId
     const content = req.body.content;
     //TODO change all msg to message
@@ -25,7 +26,7 @@ export const createComment = expressAsyncHandler(
       user: authUserId,
     };
 
-    post.comments.unshift(newComment);
+    // post.comments.unshift(newComment);
     await post.save();
     const comments = post.populate("comments.user", "username");
     return res.status(200).json(comments);
@@ -36,15 +37,13 @@ export const createComment = expressAsyncHandler(
 // @ desc get comments by postId
 // @ access public
 
-export const getCommentsByPostId = expressAsyncHandler(
-  async (req: Request, res: Response) => {
-    // TODO FIX THIS , length of undefined in populating fields ; working fine for the post request
+export const getCommentsByPostId = expressAsyncHandler(async (req, res) => {
+  // TODO FIX THIS , length of undefined in populating fields ; working fine for the post request
 
-    const post = await Post.findById(req.query.id).populate(
-      "comments.user",
-      "name"
-    );
+  const post = await Post.findById(req.query.id).populate(
+    "comments.user",
+    "name"
+  );
 
-    res.status(200).json(post.comments);
-  }
-);
+  res.status(200).json(post.comments);
+});

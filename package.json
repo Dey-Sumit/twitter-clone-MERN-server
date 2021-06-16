@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev -r tsconfig-paths/register --clear server"
+    "dev": "ts-node-dev -r tsconfig-paths/register --clear server",
+    "dev1": "ts-node -r tsconfig-paths/register  server"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +36,7 @@
     "@types/morgan": "^1.9.2",
     "@types/passport": "^1.0.6",
     "@types/passport-local": "^1.0.33",
+    "ts-node": "^9.1.1",
     "ts-node-dev": "^1.1.6",
     "typescript": "^4.3.2"
   }

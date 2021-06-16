@@ -1,4 +1,4 @@
-import { User } from "./types";
+import { IUser } from "./types";
 
 const sensitiveFields = ["password"];
 export default function extractUser(user: any) {

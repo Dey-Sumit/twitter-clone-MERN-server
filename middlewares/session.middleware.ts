@@ -1,8 +1,13 @@
+import { ExtendedRequest } from "@libs/types";
 import connectMongo from "connect-mongo";
 
 import session from "express-session";
 
-export default function sessionMiddleware(req: any, res: any, next: any) {
+export default function sessionMiddleware(
+  req: ExtendedRequest,
+  res: any,
+  next: any
+) {
   const options = {
     mongoUrl: process.env.DB_URI,
   };

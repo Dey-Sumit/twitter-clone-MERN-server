@@ -1,6 +1,7 @@
+import { ExtendedRequest } from "@libs/types";
 import { NextFunction, Request, Response } from "express";
 export default async function (
-  req: Request,
+  req: ExtendedRequest,
   res: Response,
   next: NextFunction
 ) {

@@ -36,9 +36,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/posts", postRoutes);
-app.use("/api/tags", tagRoutes);
+// app.use("/api/users", userRoutes);
+// app.use("/api/posts", postRoutes);
+// app.use("/api/tags", tagRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -47,3 +47,5 @@ app.listen(PORT, async () => {
   await connectDB();
   console.log(`Server is running on port ${PORT}`);
 });
+
+interface A {}

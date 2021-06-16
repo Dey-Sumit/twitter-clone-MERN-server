@@ -1,7 +1,8 @@
-// TODO is needed? any alternate way?
 declare namespace Express {
   export interface Request {
-    user: any;
+    user: {
+      _id: string;
+    };
     file: any;
   }
   export interface Response {

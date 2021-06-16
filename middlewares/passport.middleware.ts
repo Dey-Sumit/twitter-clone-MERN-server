@@ -1,5 +1,5 @@
-import { User } from "@libs/types";
-import UserModel from "@models/User.model";
+import UserModel from "@models/User";
+
 import bcrypt from "bcryptjs";
 import { Request } from "express";
 import passport from "passport";

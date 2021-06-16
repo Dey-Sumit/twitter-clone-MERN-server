@@ -1,5 +1,5 @@
-import { IPost, ITag } from "libs/types";
-import { NextFunction, Request, Response } from "express";
+import { ExtendedRequest, IPost, ITag } from "libs/types";
+import { NextFunction, Response } from "express";
 import { Post, Tag, User } from "models";
 import { v2 as cloudinary } from "cloudinary";
 import { Types } from "mongoose";
@@ -10,8 +10,8 @@ import { addPostToTag, addTagToPost } from "@services/post.service";
 // @access private
 
 export const getFeedByUserId = expressAsyncHandler(
-  async (req: Request, res: Response) => {
-    const user = await User.findById(req.query._id);
+  async (req: ExtendedRequest, res) => {
+    const user = await User.findById(req.query.id);
     // TODO REVIEW this request
     const { page } = req.query;
     const pageSize = 10;
@@ -20,14 +20,20 @@ export const getFeedByUserId = expressAsyncHandler(
     let posts: IPost[];
 
     posts = await Post.find({
-      $or: [{ user: { $in: user.following } }, { user: req.query._id }],
+      $or: [
+        { user: { $in: user.following } },
+        { user: req.query.id as string },
+      ],
     });
     //TODO FIX THIS : better approach we have to repeat the query
 
     const count = posts.length;
 
     posts = await Post.find({
-      $or: [{ user: { $in: user.following } }, { user: req.user._id }],
+      $or: [
+        { user: { $in: user.following } },
+        { user: req.query.id as string },
+      ],
     })
       .limit(pageSize)
       .skip(pageSize * pageNumber)
@@ -49,7 +55,7 @@ export const getFeedByUserId = expressAsyncHandler(
 // @access private
 
 export const createPost = expressAsyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req, res, next: NextFunction) => {
     const { content, tags }: { content: string; tags?: string } = req.body;
 
     const tagsArray = tags && [...new Set(tags.split(","))]; // convert to an array and remove duplicates if the tags are present
@@ -130,117 +136,111 @@ export const createPost = expressAsyncHandler(
 // @route POST /api/posts
 // @access public
 
-export const getPosts = expressAsyncHandler(
-  async (req: Request, res: Response) => {
-    const { uid, page } = req.query;
+export const getPosts = expressAsyncHandler(async (req, res) => {
+  const { uid, page } = req.query;
 
-    const pageSize = 10;
-    const pageNumber = Number(page) || 0;
+  const pageSize = 10;
+  const pageNumber = Number(page) || 0;
 
-    let posts: IPost[];
+  let posts: IPost[];
 
-    // check if the uid is passed then return posts of that user
-    let allPosts: IPost[], count: number;
+  // check if the uid is passed then return posts of that user
+  let allPosts: IPost[], count: number;
 
-    if (uid) {
-      //TODO FIX the DUPLICATION, create a service to generate feed :) or something like that
-      allPosts = await Post.find({ user: uid.toString() });
-      count = allPosts.length;
+  if (uid) {
+    //TODO FIX the DUPLICATION, create a service to generate feed :) or something like that
+    allPosts = await Post.find({ user: uid.toString() });
+    count = allPosts.length;
 
-      posts = await Post.find({ user: uid.toString() })
-        .limit(pageSize)
-        .skip(pageSize * pageNumber)
-        .populate("user")
-        .populate("tags")
-        .sort("-createdAt");
-      return res.json({
-        posts,
-        page: pageNumber,
-        pages: Math.ceil(count / pageSize) - 1,
-      });
-    }
-
-    // if not user, then return all the posts with pagination
-    count = await Post.estimatedDocumentCount();
-
-    posts = await Post.find({})
+    posts = await Post.find({ user: uid.toString() })
       .limit(pageSize)
       .skip(pageSize * pageNumber)
-      .populate("tags", "name")
       .populate("user")
+      .populate("tags")
       .sort("-createdAt");
     return res.json({
       posts,
       page: pageNumber,
       pages: Math.ceil(count / pageSize) - 1,
     });
-    // return res.json(posts);
   }
-);
+
+  // if not user, then return all the posts with pagination
+  count = await Post.estimatedDocumentCount();
+
+  posts = await Post.find({})
+    .limit(pageSize)
+    .skip(pageSize * pageNumber)
+    .populate("tags", "name")
+    .populate("user")
+    .sort("-createdAt");
+  return res.json({
+    posts,
+    page: pageNumber,
+    pages: Math.ceil(count / pageSize) - 1,
+  });
+  // return res.json(posts);
+});
 
 // @ route GET api/posts/:id
 // @ desc get  post by id
 // @ access private
 
-export const getPostById = expressAsyncHandler(
-  async (req: Request, res: Response) => {
-    //   console.log(req.params);
+export const getPostById = expressAsyncHandler(async (req, res) => {
+  //   console.log(req.params);
 
-    const { id } = req.query; // use req.params in express
-    // try {
-    const post = await Post.findById(id)
-      .populate("user")
-      // .populate("likes.user") // if you want to show the users who liked the post
-      .populate("comments.user")
-      .populate("tags", "name");
+  const { id } = req.query; // use req.params in express
+  // try {
+  const post = await Post.findById(id)
+    .populate("user")
+    // .populate("likes.user") // if you want to show the users who liked the post
+    .populate("comments.user")
+    .populate("tags", "name");
 
-    if (!post) return res.status(404).json({ msg: "Post not found" }); // TODO is it unnecessary , can we use the error middleware
-    return res.status(200).json(post);
-    // } catch (error) {
-    //   console.log(error.message);
+  if (!post) return res.status(404).json({ msg: "Post not found" }); // TODO is it unnecessary , can we use the error middleware
+  return res.status(200).json(post);
+  // } catch (error) {
+  //   console.log(error.message);
 
-    //   if (error.kind === "ObjectId")
-    //     return res.status(404).json({ msg: "Post not found" });
-    //   res.status(500).json({ msg: "server error" });
-    // }
-  }
-);
+  //   if (error.kind === "ObjectId")
+  //     return res.status(404).json({ msg: "Post not found" });
+  //   res.status(500).json({ msg: "server error" });
+  // }
+});
 
 // @ route DELETE api/posts/:id
 // @ desc delete post by id
 // @ access private
 
-export const deletePostById = expressAsyncHandler(
-  async (req: Request, res: Response) => {
-    const post = await Post.findById(req.query.id);
+export const deletePostById = expressAsyncHandler(async (req, res) => {
+  const post = await Post.findById(req.query.id);
 
-    if (!post) return res.status(404).json({ msg: "Post not found" });
+  if (!post) return res.status(404).json({ msg: "Post not found" });
 
-    if (post.user.toString() !== req.user._id.toString()) {
-      return res
-        .status(401)
-        .json({ msg: " user not authorized; seems like it's not your post" });
-    }
-    console.log({ post });
-    const cloudinaryImageId = post.cloudinaryImageId;
-    await post.remove();
-    // do not need to make this async
-    console.log({ cloudinaryImageId });
-
-    cloudinaryImageId &&
-      cloudinary.uploader.destroy(cloudinaryImageId, (result) =>
-        console.log(result)
-      );
-    res.status(200).json({ msg: "Post removed" });
+  if (post.user.toString() !== req.user._id.toString()) {
+    return res
+      .status(401)
+      .json({ msg: " user not authorized; seems like it's not your post" });
   }
-);
+  console.log({ post });
+  const cloudinaryImageId = post.cloudinaryImageId;
+  await post.remove();
+  // do not need to make this async
+  console.log({ cloudinaryImageId });
+
+  cloudinaryImageId &&
+    cloudinary.uploader.destroy(cloudinaryImageId, (result) =>
+      console.log(result)
+    );
+  res.status(200).json({ msg: "Post removed" });
+});
 
 //! not implemented in this project
 // @ route PUT api/posts/:id
 // @ desc update post by id
 // @ access private
 
-// export const updatePostById = async (req: Request, res: Response) => {
+// export const updatePostById = async (req,res) => {
 //   try {
 //     // check auth
 
@@ -266,7 +266,7 @@ export const deletePostById = expressAsyncHandler(
 // @ desc rate post by id
 // @ access private
 
-export const ratePostById = async (req: Request, res: Response) => {
+export const ratePostById = async (req, res) => {
   const authUserId = req.user._id as Types.ObjectId;
 
   const post = await Post.findById(req.query.id);
