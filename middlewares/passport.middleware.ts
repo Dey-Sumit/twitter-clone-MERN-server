@@ -1,6 +1,4 @@
 import UserModel from "@models/User";
-
-import bcrypt from "bcryptjs";
 import { Request } from "express";
 import passport from "passport";
 import { Strategy as LocalStratagy } from "passport-local";
@@ -31,11 +29,9 @@ passport.use(
 
       const user = await findUserByUsername(username);
 
-      // if(user === null) // no user exists
-
-      // matched, call done and pass the user
-      if (user && (await bcrypt.compare(password, user.password)))
-        done(null, user);
+      //TODO fix mongoose type 👇
+      //@ts-ignore
+      if (user && (await user.checkPassword(password))) done(null, user);
       // uhh!!! invalid credentials
       else done(null, false, { message: "Email or password is incorrect" });
     }

@@ -1,4 +1,5 @@
 rate endpoint changed
+follow endpoint changed
 {
 response "msg" changed to "message"
 }

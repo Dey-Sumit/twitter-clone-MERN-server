@@ -1,4 +1,3 @@
-import { Request, Response } from "express";
 import expressAsyncHandler from "express-async-handler";
 import createError from "http-errors";
 import Tag from "models/Tag";
@@ -23,12 +22,13 @@ export const getTopTags = expressAsyncHandler(async (req, res) => {
 
   return res.status(200).json(tags);
 });
+
 // @ route GET /api/tags/:tag
 // @ desc get all posts under a tag
 // @ access public
 
 export const getPostsByTag = expressAsyncHandler(async (req, res) => {
-  const { tag }: { tag?: string } = req.query;
+  const { tag } = req.params;
   const data = await Tag.find({ name: tag }).populate({
     path: "posts",
     populate: [{ path: "tags", select: "name" }, { path: "user" }],

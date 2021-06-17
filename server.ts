@@ -2,7 +2,6 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
-import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 
 import authRoutes from "@routes/auth.route";
@@ -42,9 +41,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/api/auth", authRoutes);
-// app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
-// app.use("/api/tags", tagRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/tags", tagRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

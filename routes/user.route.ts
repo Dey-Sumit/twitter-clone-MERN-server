@@ -1,25 +1,28 @@
 import {
   deleteUserById,
-  followUser,
   getFollowersById,
   getFollowingsById,
   getUserById,
-  searchUserByUsername,
-  unfollowUser,
+  searchUser,
   updateUserById,
+  toggleFollowUser,
 } from "@controllers/users.controller";
 import authMiddleware from "@middlewares/auth.middleware";
 import express from "express";
 
 const router = express.Router();
 
-router.get("/search", searchUserByUsername);
-router.get("/:id", getUserById);
-router.put("/:id", authMiddleware, updateUserById);
-router.delete("/:id", authMiddleware, deleteUserById);
-router.get("/:id/followers", getFollowersById);
-router.get("/:id/followings", getFollowingsById);
-router.post("/:id/follow", followUser);
-router.post("/:id/unfollow", unfollowUser);
+router.get("/search", searchUser);
+
+router
+  .route("/:id")
+  .get(getUserById)
+  .put(authMiddleware, updateUserById)
+  .delete(authMiddleware, deleteUserById);
+
+router.get("/:id/followers", authMiddleware, getFollowersById);
+router.get("/:id/followings", authMiddleware, getFollowingsById);
+
+router.post("/:id/follow", authMiddleware, toggleFollowUser);
 
 export default router;

@@ -1,10 +1,13 @@
-import User from "models/User";
 import { v2 as cloudinary } from "cloudinary";
-import mongoose from "mongoose";
-import Post from "models/Post";
-import { Request, Response } from "express";
+import createError from "http-errors";
 import expressAsyncHandler from "express-async-handler";
+import { Response } from "express";
+
+import User from "@models/User";
 import { ExtendedRequest } from "@libs/types";
+import extractUser from "@libs/extractUser";
+import Post from "@models/Post";
+
 export const getTopUsersByFollowers = expressAsyncHandler(
   async (req: ExtendedRequest, res) => {
     const users = await User.aggregate([
@@ -26,59 +29,51 @@ export const getTopUsersByFollowers = expressAsyncHandler(
   }
 );
 
-export const searchUserByUsername = expressAsyncHandler(async (req, res) => {
+export const searchUser = expressAsyncHandler(async (req, res) => {
   const q = req.query?.q?.toString();
 
-  if (!q) {
-    res.status(404).json({ msg: "please pass the keyword" });
-  }
+  if (!q) throw new createError.BadRequest("pass the keyword");
 
-  //! needs upgrade to sort relevant results, use elastic search
-  const users = await User.find({
-    username: {
-      $regex: q,
-      $options: "i",
-    },
-  });
-  // if (!user) return res.status(404).json({ msg: "User not found" });
-  res.status(200).json({ users });
+  const searchObj = {
+    $or: [
+      { name: { $regex: q, $options: "i" } },
+      { username: { $regex: q, $options: "i" } },
+    ],
+  };
+  const users = await User.find(searchObj);
+  res.status(200).json(users);
 });
 
 export const getUserById = expressAsyncHandler(async (req, res) => {
-  const { id } = req.query;
+  const { id } = req.params;
   const user = await User.findById(id);
-  if (!user) return res.status(404).json({ msg: "User not found" });
-
+  if (!user) throw new createError.NotFound();
   return res.json(user);
 });
 
 export const deleteUserById = expressAsyncHandler(
   async (req: ExtendedRequest, res) => {
-    if (req.query.id !== req.user._id.toString()) {
-      return res.status(401).json({ msg: " It's not your profile :(" });
-    }
-    const user = await User.findById(req.query.id);
+    if (req.params.id !== req.user._id.toString())
+      throw new createError.Unauthorized();
 
-    if (!user) return res.status(404).json({ msg: "User not found" });
+    const user = await User.findById(req.params.id);
+
+    if (!user) throw new createError.NotFound();
+
     await Post.deleteMany({ user: user._id });
+
     await user.remove();
 
     res.status(200).json({ msg: "User deleted" });
   }
 );
 
-// TODO multer middleware
-
 export const updateUserById = expressAsyncHandler(
-  async (req: ExtendedRequest, res) => {
-    const { id } = req.query;
+  async (req: ExtendedRequest, res: Response) => {
+    const { id } = req.params;
 
     // check auth & if it's his/her own profile
-    if (!req.user || req.user._id.toString() !== id) {
-      return res
-        .status(401)
-        .json({ msg: "unauthorized to update this profile" });
-    }
+    if (req.user._id.toString() !== id) throw new createError.Unauthorized();
 
     const { name, username, bio } = req.body;
 
@@ -93,17 +88,26 @@ export const updateUserById = expressAsyncHandler(
       profilePicture = image.secure_url;
     }
 
-    // TODO findByIdAndUpdate
     const oldUser = await User.findById(id);
-    // update the user
-    oldUser.name = name ? name : oldUser.name;
-    oldUser.username = username ? username : oldUser.username;
-    oldUser.bio = bio ? bio : oldUser.bio;
-    oldUser.profilePicture = profilePicture
-      ? profilePicture
-      : oldUser.profilePicture;
 
-    const user = await oldUser.save();
+    if (!oldUser) throw new createError.NotFound();
+
+    const profileFields = {
+      name: name || oldUser.name,
+      username: username || oldUser.username,
+      bio: bio || oldUser.bio,
+      profilePicture: profilePicture || oldUser.profilePicture,
+    };
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      {
+        $set: profileFields,
+      },
+      {
+        new: true,
+      }
+    );
 
     res.status(200).json(user);
   }
@@ -112,107 +116,39 @@ export const updateUserById = expressAsyncHandler(
 // @ follow request PUT
 // @ api/users/:id/follow
 // @ private
-export const followUser = expressAsyncHandler(
+
+export const toggleFollowUser = expressAsyncHandler(
   async (req: ExtendedRequest, res) => {
-    const { id }: { id?: string } = req.query;
+    const { id } = req.params;
     //! 1. add the user to my following list
-    //! 2. add me to the person's followers list
-    try {
-      if (!(await User.findById(id)))
-        return res.status(404).json({ msg: "requested user not found" });
-      // check if the user want's to follow himself
-      if (req.user._id.toString() === id) {
-        return res
-          .status(400)
-          .json({ msg: "Ouu! You cant follow yourself :(" });
-      }
+    const user = await User.findById(id);
+    if (!user) throw new createError.NotFound();
 
-      //TODO use mongoose to do it
-      if (req.user.following.includes(mongoose.Types.ObjectId(id))) {
-        return res.status(400).json({ msg: "Already Following" });
-      }
+    var isFollowing = user.followers && user.followers.includes(req.user._id);
 
-      const user = await User.findByIdAndUpdate(
-        req.user._id,
-        {
-          $push: {
-            following: mongoose.Types.ObjectId(id),
-          },
-        },
-        { new: true }
-      );
-
-      await User.findByIdAndUpdate(
-        id,
-        {
-          $push: {
-            followers: req.user._id,
-          },
-        },
-        { new: true }
-      );
-
-      //   if (!user) return res.status(404).json({ msg: "User not found" });
-      res.json({ user });
-    } catch (error) {
-      console.log(error.message);
-
-      if (error.kind === "ObjectId")
-        return res.status(404).json({ msg: "User not found" });
-      res.status(500).json({ msg: "server error" });
-    }
-  }
-);
-
-export const unfollowUser = expressAsyncHandler(
-  async (req: ExtendedRequest, res) => {
-    const { id }: { id?: string } = req.query;
-    Response; //! 1. add the user to my following list
-    //! 2. add me to the person's followers list
-
-    //   const user = await User.findById(req.user._id);
-
-    if (!(await User.findById(id)))
-      return res.status(404).json({ msg: "requested user not found" });
-    // check if the user want's to follow himself
-    if (req.user._id === mongoose.Types.ObjectId(id)) {
-      return res
-        .status(400)
-        .json({ msg: "Ouu! You cant unfollow yourself :(" });
-    }
-
-    //TODO use mongoose to do it
-    if (!req.user.following.includes(mongoose.Types.ObjectId(id))) {
-      // console.log("already following");
-      return res.status(400).json({ msg: "You are not following yet" });
-    }
-
-    // 1. remove the id from my followings
-    const user = await User.findByIdAndUpdate(
+    var option = isFollowing ? "$pull" : "$addToSet";
+    req.user = await User.findByIdAndUpdate(
       req.user._id,
       {
-        $pull: {
-          following: mongoose.Types.ObjectId(id),
+        [option]: {
+          following: id,
         },
       },
       { new: true }
     );
-    // 1. remove the id from the person's followers
+    //! 2. add me to the person's followers list
 
     await User.findByIdAndUpdate(
-      id,
+      req.user._id,
       {
-        $pull: {
+        [option]: {
           followers: req.user._id,
         },
       },
       { new: true }
     );
-    // req.session.passport.user = user;
-    // console.log("REQUEST after", req.user); req.user is updated in the next request using deserialize
 
-    //   if (!user) return res.status(404).json({ msg: "User not found" });
-    res.json({ user });
+    res.json(user);
   }
 );
 
@@ -221,9 +157,9 @@ export const unfollowUser = expressAsyncHandler(
 // @ public
 
 export const getFollowersById = expressAsyncHandler(async (req, res) => {
-  const { id }: { id?: string } = req.query;
+  const { id } = req.params;
   const user = await User.findById(id).populate("followers");
-  if (!user) return res.status(404).json({ msg: " user not found" });
+  if (!user) throw new createError.NotFound("User not found");
   const followers = user.followers;
   return res.json(followers);
 });
@@ -233,10 +169,9 @@ export const getFollowersById = expressAsyncHandler(async (req, res) => {
 // @ public
 
 export const getFollowingsById = expressAsyncHandler(async (req, res) => {
-  // add try catch
-  const { id }: { id?: string } = req.query;
-  const user = await User.findById(id).populate("following");
-  if (!user) return res.status(404).json({ msg: " user not found" });
-  const following = user.following;
-  return res.json(following);
+  const { id } = req.params;
+  const user = await User.findById(id).populate("followings");
+  if (!user) throw new createError.NotFound("User not found");
+  const followings = user.following; // TODO following or followings
+  return res.json(followings);
 });

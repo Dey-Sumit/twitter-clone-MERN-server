@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 
 import Post from "./Post";
 import { IUser } from "@libs/types";
+import { User } from ".";
 
 const UserSchema = new Schema<UserDocument>(
   {
@@ -34,6 +35,7 @@ const UserSchema = new Schema<UserDocument>(
     password: {
       type: String,
       required: true,
+      select: false,
     },
     // people follow this user
     followers: [
@@ -59,6 +61,7 @@ const UserSchema = new Schema<UserDocument>(
     likes: [{ type: Schema.Types.ObjectId, ref: "Post" }],
   },
   {
+    id: false,
     timestamps: true,
     toObject: {
       virtuals: true,
@@ -73,21 +76,23 @@ const UserSchema = new Schema<UserDocument>(
 // UserSchema.set("toJSON", { virtuals: true });
 // Virtual
 UserSchema.virtual("noOfFollowers").get(function (this: UserDocument) {
-  return this.followers.length;
+  return this.followers?.length;
 });
 UserSchema.virtual("noOfFollowing").get(function (this: UserDocument) {
-  return this.following.length;
+  return this.following?.length;
 });
 UserSchema.virtual("noOfPosts").get(function (this: UserDocument) {
-  return this.posts.length;
+  return this.posts?.length;
 });
 
 // methods
-UserSchema.methods.matchPassword = async function (
-  this: UserDocument,
-  enteredPassword: string
-) {
-  return await bcrypt.compare(enteredPassword, this.password);
+
+UserSchema.methods.checkPassword = async function (enteredPassword, done) {
+  const user = await User.findOne({ username: this.username }).select(
+    "password"
+  );
+
+  return await bcrypt.compare(enteredPassword, user.password);
 };
 
 // middleware before saving the data
