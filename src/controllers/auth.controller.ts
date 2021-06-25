@@ -2,11 +2,20 @@ import expressAsyncHandler from "express-async-handler";
 import passport from "@middlewares/passport.middleware";
 
 import User from "@models/User";
+import { validationResult } from "express-validator";
+
+const validationFormatter = validationResult.withDefaults({
+  formatter: (error) => {
+    return {
+      message: error.msg,
+    };
+  },
+});
 
 export const login = expressAsyncHandler(async (req, res, next) => {
   passport.authenticate("local", function (err, user, info) {
     if (!user)
-      // TODO ask stack overflow question this throw new Error("message")
+      //! ask stack overflow question this throw new Error("message")
       return res.status(401).json({ message: "username or password is not correct" });
 
     req.login(user, (err) => {
@@ -26,11 +35,21 @@ export const me = (req, res) => {
   return res.json(req.user);
 };
 
+/**
+ * @method POST
+ * @access Private
+ * @description Register user
+ */
 export const signup = expressAsyncHandler(async (req, res) => {
+  const errors = validationFormatter(req).array();
+
+  if (errors.length > 0) {
+    return res.status(422).json(errors[0]);
+  }
   const { name, username, email, password } = req.body;
 
-  // TODO find by username or email and send one error response
   const emailExists = await User.findOne({ email });
+
   const usernameExists = await User.findOne({ username });
 
   if (emailExists) {

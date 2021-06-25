@@ -32,3 +32,18 @@ export const addPostToTag = async (tag: ITag, post: IPost) => {
     }
   );
 };
+
+// export const generatePaginationOfPosts = async (searchObj, pageNumber, pageSize = 10, count) => {
+//   const posts = await Post.find(searchObj)
+//     .limit(pageSize)
+//     .skip(pageSize * pageNumber)
+//     .populate("user")
+//     .populate("tags")
+//     .sort("-createdAt");
+
+//   return {
+//     posts,
+//     page: pageNumber,
+//     pages: Math.ceil(count / pageSize) - 1,
+//   };
+// };

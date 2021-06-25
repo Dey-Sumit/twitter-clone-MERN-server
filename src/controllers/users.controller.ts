@@ -11,7 +11,6 @@ export const getTopUsersByFollowers = expressAsyncHandler(async (req: ExtendedRe
   const users = await User.aggregate([
     {
       $project: {
-        // TODO refactor coz I have a virtual field,can be better
         noOfFollowers: { $size: "$followers" },
         // posts: 1,
         username: 1,
@@ -21,7 +20,6 @@ export const getTopUsersByFollowers = expressAsyncHandler(async (req: ExtendedRe
     { $sort: { noOfFollowers: -1 } },
     { $limit: 10 },
   ]);
-  // const tags = await Tag.find({}).sort({ totalPosts: -1 }).limit(5);
 
   return res.status(200).json(users);
 });
@@ -34,7 +32,7 @@ export const searchUser = expressAsyncHandler(async (req, res) => {
   const searchObj = {
     $or: [{ name: { $regex: q, $options: "i" } }, { username: { $regex: q, $options: "i" } }],
   };
-  const users = await User.find(searchObj);
+  const users = await User.find(searchObj, "profilePicture name username");
   res.status(200).json(users);
 });
 
@@ -164,6 +162,6 @@ export const getFollowingsById = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   const user = await User.findById(id).populate("followings");
   if (!user) throw new createError.NotFound("User not found");
-  const followings = user.following; // TODO following or followings
+  const followings = user.following; // !following or followings
   return res.json(followings);
 });

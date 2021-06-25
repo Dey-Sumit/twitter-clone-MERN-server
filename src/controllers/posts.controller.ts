@@ -37,7 +37,7 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
     .skip(pageSize * pageNumber)
     .populate("user", "username name profilePicture")
     .populate("tags", "name")
-    //.populate("user")
+
     .sort("-createdAt");
 
   return res.json({
@@ -91,36 +91,31 @@ export const createPost = expressAsyncHandler(
     );
     //2. add tag to post
     //Promise.all = stackoverflow.com/questions/40140149/use-async-await-with-array-map
-    //TODO  create separate function
+
     if (tags) {
       await Promise.all(
         tagsArray.map(async (tagName) => {
-          try {
-            // check if the tag is already created
-            const tag = await Tag.findOne({
-              name: tagName,
-            });
+          // check if the tag is already created
+          const tag = await Tag.findOne({
+            name: tagName,
+          });
 
-            //stackoverflow.com/questions/11963684/how-to-push-an-array-of-objects-into-an-array-in-mongoose-with-one-call
-            // if created ->find the post and add the tag
-            if (tag) {
-              post = await addTagToPost(post, tag);
+          //stackoverflow.com/questions/11963684/how-to-push-an-array-of-objects-into-an-array-in-mongoose-with-one-call
+          // if created ->find the post and add the tag
+          if (tag) {
+            post = await addTagToPost(post, tag);
 
-              // add the post under the tag
-              await addPostToTag(tag, post);
-            } else {
-              //  if the tag is new then create a new tag
-              const newTag = await Tag.create({ name: tagName });
+            // add the post under the tag
+            await addPostToTag(tag, post);
+          } else {
+            //  if the tag is new then create a new tag
+            const newTag = await Tag.create({ name: tagName });
 
-              // add the tag to the post
-              post = await addTagToPost(post, newTag);
+            // add the tag to the post
+            post = await addTagToPost(post, newTag);
 
-              // add the post under the tag
-              await addPostToTag(newTag, post);
-            }
-          } catch (error) {
-            // TODO fix this try catch ; do  I need this
-            next(error.message);
+            // add the post under the tag
+            await addPostToTag(newTag, post);
           }
         })
       );
@@ -129,60 +124,11 @@ export const createPost = expressAsyncHandler(
   }
 );
 
-// @desc get all posts | :uid-> get all posts by user id (PAGINATED)
-// @route POST /api/posts
-// @access public
-
-//! This controller is not needed , we can do this from feed (no user)
-export const getPosts = expressAsyncHandler(async (req, res) => {
-  const { uid, page } = req.query;
-
-  const pageSize = 10;
-  const pageNumber = Number(page) || 0;
-
-  let posts: IPost[];
-
-  // check if the uid is passed then return posts of that user
-  let allPosts: IPost[], count: number;
-
-  if (uid) {
-    //TODO FIX the DUPLICATION, create a service to generate feed :) or something like that
-    allPosts = await Post.find({ user: uid.toString() });
-    count = allPosts.length;
-
-    posts = await Post.find({ user: uid.toString() })
-      .limit(pageSize)
-      .skip(pageSize * pageNumber)
-      .populate("user")
-      .populate("tags")
-      .sort("-createdAt");
-    return res.json({
-      posts,
-      page: pageNumber,
-      pages: Math.ceil(count / pageSize) - 1,
-    });
-  }
-
-  // if not user, then return all the posts with pagination
-  count = await Post.estimatedDocumentCount();
-
-  posts = await Post.find({})
-    .limit(pageSize)
-    .skip(pageSize * pageNumber)
-    .populate("tags", "name")
-    .populate("user")
-    .sort("-createdAt");
-  return res.json({
-    posts,
-    page: pageNumber,
-    pages: Math.ceil(count / pageSize) - 1,
-  });
-  // return res.json(posts);
-});
-
-// @ route GET api/posts/:id
-// @ desc get  post by id
-// @ access private
+/**
+ * @method GET
+ * @access Public
+ * @endpoint /api/posts/:id/comments/
+ */
 
 export const getPostById = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -198,9 +144,11 @@ export const getPostById = expressAsyncHandler(async (req, res) => {
   return res.status(200).json(post);
 });
 
-// @ route DELETE api/posts/:id
-// @ desc delete post by id
-// @ access private
+/**
+ * @method DELETE
+ * @access Private
+ * @endpoint api/posts/:id
+ */
 
 export const deletePostById = expressAsyncHandler(async (req: ExtendedRequest, res) => {
   const post = await Post.findById(req.params.id);
@@ -216,6 +164,7 @@ export const deletePostById = expressAsyncHandler(async (req: ExtendedRequest, r
   // delete the file
   cloudinaryImageId &&
     cloudinary.uploader.destroy(cloudinaryImageId, (result) => console.log(result));
+
   res.status(200).json({ message: "Post removed" });
 });
 
@@ -250,6 +199,11 @@ export const deletePostById = expressAsyncHandler(async (req: ExtendedRequest, r
 // @ desc rate post by id
 // @ access private
 
+/**
+ * @method PUT
+ * @access Private
+ * @endpoint api/posts/:id/rate
+ */
 export const ratePostById = expressAsyncHandler(async (req: ExtendedRequest, res: Response) => {
   const authUserId = req.user._id;
   const postId = req.params.id;

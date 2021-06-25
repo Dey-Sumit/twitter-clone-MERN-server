@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import { IUser } from "@libs/types";
 import User from "@models/User";
 
+type UserDocument = IUser & Document;
+
 const UserSchema = new Schema<UserDocument>(
   {
     name: {
@@ -43,7 +45,7 @@ const UserSchema = new Schema<UserDocument>(
         ref: "User",
       },
     ],
-    // people this user follow
+   
 
     following: [
       {
@@ -86,7 +88,7 @@ UserSchema.virtual("noOPosts").get(function (this: UserDocument) {
 
 // methods
 
-UserSchema.methods.checkPassword = async function (enteredPassword, done) {
+UserSchema.methods.checkPassword = async function (enteredPassword) {
   const user = await User.findOne({ username: this.username }).select("password");
 
   return await bcrypt.compare(enteredPassword, user.password);
@@ -103,7 +105,6 @@ UserSchema.pre("save", async function (this, next: Function) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-type UserDocument = IUser & Document;
 
 // UserSchema.pre("deleteOne", async function (next) {
 //   console.log("removing");

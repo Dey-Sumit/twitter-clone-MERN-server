@@ -2,17 +2,12 @@ import path from "path";
 import multer from "multer";
 
 const uploadFile = (): multer.Multer => {
-  const checkFileType = (
-    file: Express.Multer.File,
-    cb: multer.FileFilterCallback
-  ) => {
+  const checkFileType = (file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     console.log({ file });
 
-    const fileTypes = /jpg|jpeg|png/;
+    const fileTypes = /jpg|jpeg|png|svg/;
 
-    const extname = fileTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
+    const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
 
     const mimetype = fileTypes.test(file.mimetype);
 

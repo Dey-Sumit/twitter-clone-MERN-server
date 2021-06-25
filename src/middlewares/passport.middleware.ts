@@ -29,8 +29,6 @@ passport.use(
 
       const user = await findUserByUsername(username);
 
-      //TODO fix mongoose type 👇
-      //@ts-ignore
       if (user && (await user.checkPassword(password))) done(null, user);
       // uhh!!! invalid credentials
       else done(null, false);

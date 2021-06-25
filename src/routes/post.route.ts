@@ -14,7 +14,7 @@ import express from "express";
 const router = express.Router();
 
 router.post("/", authMiddleware, uploadFile().single("attachment"), createPost);
-router.get("/feed", getFeed); // TODO might be a better fit for user route
+router.get("/feed", getFeed);
 
 router.route("/:id").get(getPostById).delete(authMiddleware, deletePostById);
 

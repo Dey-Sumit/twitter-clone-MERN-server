@@ -8,7 +8,6 @@ export interface ExtendedRequest extends Request {
   file: any;
 }
 
-
 // https://stackoverflow.com/questions/54030381/unable-to-extend-express-request-in-typescript
 
 export interface IUser {
@@ -21,6 +20,7 @@ export interface IUser {
   following: mongoose_id[];
   followers: mongoose_id[];
   likes: mongoose_id[];
+  checkPassword?: (password: string) => Promise<boolean>;
   // virtual fields
   noOfFollowers: number;
   noOfFollowing: number;
@@ -36,10 +36,10 @@ export interface IPost {
   createdAt?: Date;
   likes?: [
     {
-      user: mongoose.Types.ObjectId | string;
+      user: mongoose.Types.ObjectId;
     }
   ];
-  comments?: Comment[];
+  comments?: IComment[];
   tags?: [
     {
       tag: mongoose.Types.ObjectId;

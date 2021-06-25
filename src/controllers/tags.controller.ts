@@ -31,7 +31,7 @@ export const getPostsByTag = expressAsyncHandler(async (req, res) => {
   const { tag } = req.params;
   const data = await Tag.find({ name: tag }).populate({
     path: "posts",
-    populate: [{ path: "tags", select: "name" }, { path: "user" }],
+    populate: [{ path: "tags", select: "name" }, { path: "user",select:"profilePicture name username createdAt" }],
   });
 
   if (data.length == 0) throw new createError.NotFound("Tag does not exist");

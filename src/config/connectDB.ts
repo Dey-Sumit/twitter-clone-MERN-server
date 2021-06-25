@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import mongoose from "mongoose";
 
 const connectDB = async () => {
@@ -9,19 +10,18 @@ const connectDB = async () => {
       useNewUrlParser: true,
     });
   } catch (error) {
-    console.log("connection error ", error.message);
+    console.log(chalk.red("->connection error %s"), error.message);
   }
 
   const connection = mongoose.connection;
 
   if (connection.readyState >= 1) {
-    console.log("Connected to database");
+    console.log(chalk.green("-> Connected to DataBase"));
     return;
   }
 
-  connection.on("connected", () => console.log("Connected to database"));
+  connection.on("connected", () => console.log(chalk.green("-> Connected to DataBase")));
 
-  connection.on("error", () => console.log("Database connection failed"));
+  connection.on("error", (err) => console.log(chalk.red("-> Connection error %s"), err.message));
 };
 export default connectDB;
-//TODO change the DB connection URL

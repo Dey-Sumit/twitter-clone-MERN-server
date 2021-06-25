@@ -5,6 +5,7 @@ declare global {
       PORT: string;
       NODE_ENV: "development" | "production";
       JWT_SECRET: string;
+      CLIENT_URL: string;
     }
   }
 }
