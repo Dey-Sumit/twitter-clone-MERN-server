@@ -45,7 +45,6 @@ const UserSchema = new Schema<UserDocument>(
         ref: "User",
       },
     ],
-   
 
     following: [
       {
@@ -60,6 +59,7 @@ const UserSchema = new Schema<UserDocument>(
       },
     ],
     likes: [{ type: Schema.Types.ObjectId, ref: "Post" }],
+    notifications: [{ type: Schema.Types.ObjectId, ref: "Notification" }],
   },
   {
     id: false,
@@ -85,6 +85,23 @@ UserSchema.virtual("noOfFollowing").get(function (this: UserDocument) {
 UserSchema.virtual("noOPosts").get(function (this: UserDocument) {
   return this.posts?.length;
 });
+UserSchema.virtual("noOfNotifications").get(function (this: UserDocument) {
+  return this.notifications?.length;
+});
+// UserSchema.virtual("noOfNotifications1").get(async function (this: UserDocument) {
+//   const x = this.getNotifications();
+//   console.log({ x });
+
+//   return x;
+// });
+// UserSchema.virtual("noOfUnreadNotifications").get(async function (this: UserDocument) {
+//   const user = await User.findById(this._id).populate("notifications", "read");
+
+//   const unreadNotifications = user.notifications.filter((notification) => !notification.read);
+//   console.log(unreadNotifications);
+
+//   return unreadNotifications.length;
+// });
 
 // methods
 
@@ -93,6 +110,21 @@ UserSchema.methods.checkPassword = async function (enteredPassword) {
 
   return await bcrypt.compare(enteredPassword, user.password);
 };
+// UserSchema.methods.getNotifications = async function () {
+//   const user = await User.findById(this._id).populate("notifications", "read");
+//   const unreadNotifications = user.notifications.filter((notification) => !notification.read);
+//   console.log(unreadNotifications);
+
+//   return unreadNotifications.length;
+// };
+// UserSchema.method("getNotifications1", function (cb) {
+//   User.findById(this._id, function (err, notebook) {
+//     cb(notebook);
+//   });
+// });
+// UserSchema.getNotifications1(function (data) {
+//   return "hello";
+// });
 
 // middleware before saving the data
 // hash the password during registration
@@ -105,6 +137,11 @@ UserSchema.pre("save", async function (this, next: Function) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+// UserSchema.method("getNotifications", function (cb) {
+//   User.findById(this._id, function (err, notebook) {
+//     cb(notebook);
+//   });
+// });
 
 // UserSchema.pre("deleteOne", async function (next) {
 //   console.log("removing");

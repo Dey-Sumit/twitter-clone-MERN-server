@@ -6,6 +6,7 @@ import { Response } from "express";
 import User from "@models/User";
 import { ExtendedRequest } from "@libs/types";
 import Post from "@models/Post";
+import Notification from "@models/Notification";
 
 export const getTopUsersByFollowers = expressAsyncHandler(async (req: ExtendedRequest, res) => {
   const users = await User.aggregate([
@@ -105,23 +106,23 @@ export const updateUserById = expressAsyncHandler(async (req: ExtendedRequest, r
 // @ private
 
 export const toggleFollowUser = expressAsyncHandler(async (req: ExtendedRequest, res) => {
-  const { id } = req.params;
+  const { id: userTo } = req.params;
   //! 1. add the user to my following list
   // const user = await User.findById(id);
   // if (!user) throw new createError.NotFound();
   // console.log(req.user.following);
 
-  var isFollowing = req.user?.following.includes(id);
-  console.log(isFollowing);
+  var isFollowing = req.user?.following.includes(userTo);
+  // console.log(isFollowing);
 
   var option = isFollowing ? "$pull" : "$addToSet";
-  console.log({ option });
+  // console.log({ option });
 
   req.user = await User.findByIdAndUpdate(
     req.user._id,
     {
       [option]: {
-        following: id,
+        following: userTo,
       },
     },
     { new: true }
@@ -130,7 +131,7 @@ export const toggleFollowUser = expressAsyncHandler(async (req: ExtendedRequest,
   //60c9fd3b618fd83328742008 auser
 
   await User.findByIdAndUpdate(
-    id,
+    userTo,
     {
       [option]: {
         followers: req.user._id,
@@ -138,6 +139,28 @@ export const toggleFollowUser = expressAsyncHandler(async (req: ExtendedRequest,
     },
     { new: true }
   );
+
+  if (!isFollowing) {
+    const data = {
+      userFrom: req.user._id,
+      notificationType: "follow",
+      entityId: req.user._id,
+    };
+
+    const notification = await Notification.create(data);
+    // console.log({ notification });
+
+    // await might not be needed here
+    await User.findByIdAndUpdate(
+      userTo,
+      {
+        $push: {
+          notifications: notification._id,
+        },
+      },
+      { new: true }
+    );
+  }
 
   res.json(req.user);
 });

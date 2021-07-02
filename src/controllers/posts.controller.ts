@@ -215,7 +215,6 @@ export const ratePostById = expressAsyncHandler(async (req: ExtendedRequest, res
   // check if the post exist
 
   const isLiked = req.user.likes && post.likes.includes(authUserId);
-  console.log({ isLiked });
 
   var option = isLiked ? "$pull" : "$addToSet";
 

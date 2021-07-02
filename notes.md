@@ -1,9 +1,6 @@
-rate endpoint changed
-follow endpoint changed
-{
-response "msg" changed to "message"
-}
+# Features
 
-### points to review
+[] add winston logger
+https://gist.github.com/rtgibbons/7354879
 
-- do I need a likes field in User schema ? can be useful to show activity but takes lot of extra code :(
+create endpoint to get posts by user id | as to render the posts in profile

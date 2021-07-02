@@ -20,12 +20,14 @@ export interface IUser {
   following: mongoose_id[];
   followers: mongoose_id[];
   likes: mongoose_id[];
+  notifications: mongoose_id[];
+  posts: mongoose_id[];
   checkPassword?: (password: string) => Promise<boolean>;
   // virtual fields
   noOfFollowers: number;
   noOfFollowing: number;
-  posts: mongoose_id[];
   noOPosts: number;
+  noOfNotifications: number;
 }
 export interface IPost {
   _id?: mongoose_id;
