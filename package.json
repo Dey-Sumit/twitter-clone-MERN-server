@@ -5,13 +5,17 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev -r tsconfig-paths/register  --watch src --transpile-only --clear src/index.ts",
-    "build": "tsc"
+    "build1": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+    "build2": "ttsc -P tsconfig.json ",
+    "build": "tsc --project tsconfig.json && tscpaths -p tsconfig.json -s ./src -o ./dist",
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@socket.io/admin-ui": "^0.2.0",
+    "@zerollup/ts-transform-paths": "^1.7.18",
     "bcryptjs": "^2.4.3",
     "chalk": "^3.0.0",
     "cloudinary": "^1.26.0",
@@ -31,7 +35,9 @@
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
     "socket.io": "^4.1.2",
-    "tsconfig-paths": "^3.9.0"
+    "tsconfig-paths": "^3.9.0",
+    "tscpaths": "0.0.9",
+    "ttypescript": "^1.5.12"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

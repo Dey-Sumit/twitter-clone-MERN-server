@@ -18,8 +18,8 @@ import connectDB from "@config/connectDB";
 import { notFound, errorHandler } from "@middlewares/error.middleware";
 import passport from "@middlewares/passport.middleware";
 import sessionMiddleware from "@middlewares/session.middleware";
-import { Server, Socket } from "socket.io";
-import socket from "socket";
+import { Server } from "socket.io";
+import socket from "./socket"; // not from 'socket' , else it will throw error after build
 
 const morganChalk = morgan(function (tokens, req, res) {
   return [
