@@ -6,6 +6,7 @@ import {
   deletePostById,
   getFeed,
   getPostById,
+  getPostsByUserId,
   ratePostById,
 } from "@controllers/posts.controller";
 
@@ -15,6 +16,7 @@ const router = express.Router();
 
 router.post("/", authMiddleware, uploadFile().single("attachment"), createPost);
 router.get("/feed", getFeed);
+router.get("/", getPostsByUserId);
 
 router.route("/:id").get(getPostById).delete(authMiddleware, deletePostById);
 

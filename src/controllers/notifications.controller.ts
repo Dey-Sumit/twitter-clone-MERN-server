@@ -12,7 +12,6 @@ import User from "@models/User";
  */
 export const markAsRead = expressAsyncHandler(async (req: ExtendedRequest, res: Response) => {
   // check if the notification belong to the auth user
-  
 
   await Notification.findByIdAndUpdate(req.params.id, { read: true });
   res.sendStatus(204);
@@ -25,7 +24,18 @@ export const markAsRead = expressAsyncHandler(async (req: ExtendedRequest, res: 
  */
 export const getNotifications = expressAsyncHandler(async (req: ExtendedRequest, res: Response) => {
   const unreadOnly = req.query.unreadOnly !== undefined || req.query.unreadOnly == "true";
-  const user = await User.findById(req.user._id).populate("notifications").sort({ createdAt: -1 });
+  const user = await User.findById(req.user._id).populate({
+    path: "notifications",
+    options: {
+      sort: {
+        createdAt: -1,
+      },
+    },
+    populate: {
+      path: "userFrom",
+      select: "name profilePicture",
+    },
+  });
   if (unreadOnly) {
     //@ts-ignore
     const unreadNotifications = user.notifications.filter((notification) => !notification.read);

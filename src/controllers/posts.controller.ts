@@ -8,6 +8,7 @@ import createError from "http-errors";
 import Post from "@models/Post";
 import User from "@models/User";
 import Tag from "@models/Tag";
+import Notification from "@models/Notification";
 
 // @desc get user feed posts
 // @route GET /api/posts/feed
@@ -38,6 +39,33 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
     .populate("user", "username name profilePicture")
     .populate("tags", "name")
 
+    .sort("-createdAt");
+
+  return res.json({
+    posts: posts,
+    page: pageNumber,
+    pages: Math.ceil(count / pageSize) - 1,
+  });
+});
+
+export const getPostsByUserId = expressAsyncHandler(async (req: ExtendedRequest, res) => {
+  const { page, uid } = req.query;
+  const pageSize = 10;
+  const pageNumber = Number(page) || 0;
+
+  let posts: IPost[];
+
+  const option = { user: uid as string };
+
+  posts = await Post.find(option);
+
+  const count = posts.length;
+
+  posts = await Post.find(option)
+    .limit(pageSize)
+    .skip(pageSize * pageNumber)
+    .populate("user", "username name profilePicture")
+    .populate("tags", "name")
     .sort("-createdAt");
 
   return res.json({
@@ -199,16 +227,11 @@ export const deletePostById = expressAsyncHandler(async (req: ExtendedRequest, r
 // @ desc rate post by id
 // @ access private
 
-/**
- * @method PUT
- * @access Private
- * @endpoint api/posts/:id/rate
- */
 export const ratePostById = expressAsyncHandler(async (req: ExtendedRequest, res: Response) => {
   const authUserId = req.user._id;
   const postId = req.params.id;
 
-  let post = await Post.findById(req.params.id);
+  let post = await Post.findById(req.params.id).populate("user", "_id");
 
   if (!post) throw new createError.NotFound();
 
@@ -224,6 +247,29 @@ export const ratePostById = expressAsyncHandler(async (req: ExtendedRequest, res
     { [option]: { likes: postId } },
     { new: true }
   );
+
+  if (!isLiked) {
+    const data = {
+      userFrom: req.user._id,
+      notificationType: "like",
+      entityId: post._id,
+    };
+
+    const notification = await Notification.create(data);
+    // console.log({ notification });
+
+    // await might not be needed here
+    await User.findByIdAndUpdate(
+      //@ts-ignore
+      post.user._id,
+      {
+        $push: {
+          notifications: notification._id,
+        },
+      },
+      { new: true }
+    );
+  }
 
   post = await Post.findByIdAndUpdate(postId, { [option]: { likes: authUserId } }, { new: true });
 

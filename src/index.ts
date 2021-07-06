@@ -50,6 +50,7 @@ instrument(io, {
 });
 
 app.use(morganChalk);
+console.log(process.env.CLIENT_URL);
 
 app.use(
   cors({

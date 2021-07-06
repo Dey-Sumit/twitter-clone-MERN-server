@@ -7,6 +7,7 @@ const NotificationSchema = new Schema(
     notificationType: String,
     read: { type: Boolean, default: false },
     entityId: Schema.Types.ObjectId,
+    // message: { type: String, required: true },
   },
   { timestamps: true }
 );
