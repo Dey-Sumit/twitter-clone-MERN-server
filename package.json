@@ -5,9 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev -r tsconfig-paths/register  --watch src --transpile-only --clear src/index.ts",
-    "build1": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
-    "build2": "ttsc -P tsconfig.json ",
-    "build": "tsc --project tsconfig.json && tscpaths -p tsconfig.json -s ./src -o ./dist",
+    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "start": "node dist/index.js"
   },
   "keywords": [],
