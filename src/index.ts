@@ -36,7 +36,7 @@ dotenv.config();
 const PORT = process.env.PORT || 4000;
 
 const app = express();
-
+app.set("trust proxy", 1); // trust first proxy
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   //TODO I might not need these config ,
