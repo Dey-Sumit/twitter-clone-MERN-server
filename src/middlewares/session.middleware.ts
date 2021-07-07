@@ -9,7 +9,7 @@ export default function sessionMiddleware(req: ExtendedRequest, res: any, next: 
   };
 
   //const sessionConfig = ;
-  // console.log(process.env.NODE_ENV, process.env.NODE_ENV !== "development");
+  console.log(process.env.NODE_ENV, process.env.NODE_ENV !== "development");
   return session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -17,7 +17,8 @@ export default function sessionMiddleware(req: ExtendedRequest, res: any, next: 
     store: connectMongo.create(options),
     cookie: {
       secure: process.env.NODE_ENV !== "development", // transfer over https only
-      sameSite: "strict", // send over cross-origin site
+      sameSite: "none", // send over cross-origin site
+      httpOnly: true,
     },
   })(req, res, next);
 }
