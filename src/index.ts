@@ -13,7 +13,7 @@ import tagRoutes from "@routes/tag.route";
 
 import notificationRoutes from "@routes/notification.route";
 
-import connectDB from "utils/connectDB";
+import connectDB from "@utils/connectDB";
 
 import { notFound, errorHandler } from "@middlewares/error.middleware";
 import passport from "@middlewares/passport.middleware";
