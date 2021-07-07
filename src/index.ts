@@ -3,32 +3,33 @@ import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import { v2 as cloudinary } from "cloudinary";
-import chalk from "chalk";
 import { createServer } from "http";
-const { instrument } = require("@socket.io/admin-ui");
+import { instrument } from "@socket.io/admin-ui";
 
 import authRoutes from "@routes/auth.route";
 import userRoutes from "@routes/user.route";
 import postRoutes from "@routes/post.route";
 import tagRoutes from "@routes/tag.route";
+
 import notificationRoutes from "@routes/notification.route";
 
-import connectDB from "@config/connectDB";
+import connectDB from "utils/connectDB";
 
 import { notFound, errorHandler } from "@middlewares/error.middleware";
 import passport from "@middlewares/passport.middleware";
 import sessionMiddleware from "@middlewares/session.middleware";
 import { Server } from "socket.io";
 import socket from "./socket"; // not from 'socket' , else it will throw error after build
+import log from "@libs/logger";
 
-const morganChalk = morgan(function (tokens, req, res) {
-  return [
-    chalk.green.bold(tokens.method(req, res)),
-    chalk.blue.bold(tokens.status(req, res)),
-    chalk.white(tokens.url(req, res)),
-    // chalk.yellow(tokens["response-time"](req, res) + " ms"),
-  ].join(" ");
-});
+// const morganChalk = morgan(function (tokens, req, res) {
+//   return [
+//     chalk.green.bold(tokens.method(req, res)),
+//     chalk.blue.bold(tokens.status(req, res)),
+//     chalk.white(tokens.url(req, res)),
+//     // chalk.yellow(tokens["response-time"](req, res) + " ms"),
+//   ].join(" ");
+// });
 
 dotenv.config();
 
@@ -48,9 +49,7 @@ const io = new Server(httpServer, {
 instrument(io, {
   auth: false,
 });
-
-app.use(morganChalk);
-console.log(process.env.CLIENT_URL);
+app.use(morgan("dev"));
 
 app.use(
   cors({
@@ -84,6 +83,6 @@ app.use(errorHandler);
 
 httpServer.listen(PORT, () => {
   connectDB(); // asyncly connected to db
-  console.log(chalk.green(`-> Server is Running on ${PORT}`));
+  log.info(`Server is Running on ${PORT}`);
   socket({ io });
 });

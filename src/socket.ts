@@ -1,3 +1,4 @@
+import log from "@libs/logger";
 import { Server, Socket } from "socket.io";
 
 const EVENTS = {
@@ -19,17 +20,18 @@ const EVENTS = {
 };
 
 const userToSocketMap: Record<string, string> = {};
-function deleteByVal(val, obj) {
+
+function deleteByVal(val: string, obj: Record<string, string>) {
   for (var key in obj) {
     if (obj[key] == val) delete obj[key];
   }
 }
 function socket({ io }: { io: Server }) {
-  console.log("-> socket enabled");
+  log.info("Socket Enabled");
 
   io.on(EVENTS.connection, (socket: Socket) => {
-    console.log(`-> User Connected ${socket.id}`);
-   
+    log.info(`User Connected ${socket.id}`);
+
     const userId = socket.handshake.query.userId as string;
     userToSocketMap[userId] = socket.id;
 
@@ -38,14 +40,13 @@ function socket({ io }: { io: Server }) {
 
     socket.on(EVENTS.CLIENT.NOTIFY, ({ userTo, message }) => {
       const userToSocket = userToSocketMap[userTo];
-   //   console.log("to notify", { userTo, userToSocket });
+      //   console.log("to notify", { userTo, userToSocket });
       io.to(userToSocket).emit(EVENTS.SERVER.NOTIFY_TO_CLIENT, { message });
     });
 
     socket.on(EVENTS.disconnect, () => {
-      console.log("Disconnect ", socket.id);
+      log.info(`User Disconnected ${socket.id} `);
       deleteByVal(socket.id, userToSocketMap);
-  
     });
   });
 }
