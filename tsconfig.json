@@ -51,7 +51,7 @@
       "@middlewares/*": ["middlewares/*"],
       "@services/*": ["services/*"],
       "@routes/*": ["routes/*"],
-      "@config/*": ["config/*"],
+      "@utils/*": ["utils/*"],
       "@controllers/*": ["controllers/*"]
     },
     // "rootDirs": [],                              /* List of root folders whose combined content represents the structure of the project at runtime. */

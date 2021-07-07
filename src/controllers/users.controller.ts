@@ -7,6 +7,7 @@ import User from "@models/User";
 import { ExtendedRequest } from "@libs/types";
 import Post from "@models/Post";
 import Notification from "@models/Notification";
+import log from "@libs/logger";
 
 export const getTopUsersByFollowers = expressAsyncHandler(async (req: ExtendedRequest, res) => {
   const users = await User.aggregate([
