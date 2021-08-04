@@ -5,6 +5,8 @@ import morgan from "morgan";
 import { v2 as cloudinary } from "cloudinary";
 import { createServer } from "http";
 import { instrument } from "@socket.io/admin-ui";
+import { Server } from "socket.io";
+import socket from "./socket"; // not from 'socket' , else it will throw error after build
 
 import authRoutes from "@routes/auth.route";
 import userRoutes from "@routes/user.route";
@@ -18,8 +20,6 @@ import connectDB from "@utils/connectDB";
 import { notFound, errorHandler } from "@middlewares/error.middleware";
 import passport from "@middlewares/passport.middleware";
 import sessionMiddleware from "@middlewares/session.middleware";
-import { Server } from "socket.io";
-import socket from "./socket"; // not from 'socket' , else it will throw error after build
 import log from "@libs/logger";
 
 // const morganChalk = morgan(function (tokens, req, res) {
@@ -39,7 +39,7 @@ const app = express();
 app.set("trust proxy", 1); // trust first proxy
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  //TODO I might not need these config ,
+ 
   cors: {
     origin: [process.env.CLIENT_URL, "https://admin.socket.io"],
     credentials: true,
