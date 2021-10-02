@@ -8,6 +8,9 @@
     "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
     "start": "node dist/index.js"
   },
+  "engines": {
+    "node": "v16.8.0"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -28,7 +31,6 @@
     "mongoose": "^5.12.13",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
-  
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
     "pino": "^6.11.3",
