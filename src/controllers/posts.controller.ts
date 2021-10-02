@@ -1,4 +1,4 @@
-import { ExtendedRequest, IPost } from "@libs/types";
+import { ExtendedRequest, IPost, IUser } from "@libs/types";
 import { NextFunction, Response } from "express";
 
 import { v2 as cloudinary } from "cloudinary";
@@ -10,18 +10,31 @@ import User from "@models/User";
 import Tag from "@models/Tag";
 import Notification from "@models/Notification";
 
-// @desc get user feed posts
-// @route GET /api/posts/feed
-// @access private
+/**
+ * @desc get user feed posts
+   @route GET /api/posts/feed
+   @access private
+ */
 
 export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => {
-  let user = req.user;
+  let user: IUser = req.user;
 
   const { page } = req.query;
   const pageSize = 10;
   const pageNumber = Number(page) || 0;
 
   let posts: IPost[];
+
+  if (user.following.length === 0) {
+    posts = await Post.aggregate([{ $sample: { size: 10 } }]);
+
+    posts = await Post.populate(posts, { path: "user tags" });
+    // console.log({ posts });
+
+    return res.json({
+      posts,
+    });
+  }
 
   const option = req.user
     ? {
@@ -74,83 +87,89 @@ export const getPostsByUserId = expressAsyncHandler(async (req: ExtendedRequest,
     pages: Math.ceil(count / pageSize) - 1,
   });
 });
+export const getRandom = expressAsyncHandler(async (req: ExtendedRequest, res) => {
+  const posts = await Post.aggregate([{ $sample: { size: 5 } }]);
+  res.json({
+    posts,
+  });
+});
 
-// @desc create post
-// @route POST /api/posts
-// @access private
+/**
+ * @desc create post
+ @route POST /api/posts
+ @access private
+ */
 
-export const createPost = expressAsyncHandler(
-  async (req: ExtendedRequest, res, next: NextFunction) => {
-    const { content, tags }: { content: string; tags?: string } = req.body;
+export const createPost = expressAsyncHandler(async (req: ExtendedRequest, res, next: NextFunction) => {
+  const { content, tags }: { content: string; tags?: string } = req.body;
 
-    const tagsArray = tags && [...new Set(tags.split(","))]; // convert to an array and remove duplicates if the tags are present
+  const tagsArray = tags && [...new Set(tags.split(","))]; // convert to an array and remove duplicates if the tags are present
 
-    if (!content) throw new createError.BadRequest("Content is Required");
+  if (!content) throw new createError.BadRequest("Content is Required");
 
-    // insert post
-    let attachmentURL: string, cloudinaryImageId: string;
+  // insert post
+  let attachmentURL: string, cloudinaryImageId: string;
 
-    if (req.file) {
-      const image = await cloudinary.uploader.upload(req.file.path);
-      attachmentURL = image.secure_url;
-      cloudinaryImageId = image.public_id;
-    }
-
-    const postDoc: IPost = {
-      user: req.user._id,
-      content: req.body.content,
-      attachmentURL,
-      cloudinaryImageId,
-    };
-
-    let post = await Post.create(postDoc);
-
-    // 1 . add the post inside user doc
-    await User.findByIdAndUpdate(
-      req.user._id,
-      {
-        $push: {
-          posts: post._id,
-        },
-      },
-      {
-        new: true,
-      }
-    );
-    //2. add tag to post
-    //Promise.all = stackoverflow.com/questions/40140149/use-async-await-with-array-map
-
-    if (tags) {
-      await Promise.all(
-        tagsArray.map(async (tagName) => {
-          // check if the tag is already created
-          const tag = await Tag.findOne({
-            name: tagName,
-          });
-
-          //stackoverflow.com/questions/11963684/how-to-push-an-array-of-objects-into-an-array-in-mongoose-with-one-call
-          // if created ->find the post and add the tag
-          if (tag) {
-            post = await addTagToPost(post, tag);
-
-            // add the post under the tag
-            await addPostToTag(tag, post);
-          } else {
-            //  if the tag is new then create a new tag
-            const newTag = await Tag.create({ name: tagName });
-
-            // add the tag to the post
-            post = await addTagToPost(post, newTag);
-
-            // add the post under the tag
-            await addPostToTag(newTag, post);
-          }
-        })
-      );
-    }
-    return res.status(200).json(post);
+  if (req.file) {
+    const image = await cloudinary.uploader.upload(req.file.path);
+    attachmentURL = image.secure_url;
+    cloudinaryImageId = image.public_id;
   }
-);
+
+  const postDoc: IPost = {
+    user: req.user._id,
+    content: req.body.content,
+    attachmentURL,
+    cloudinaryImageId,
+  };
+
+  let post = await Post.create(postDoc);
+
+  // 1 . add the post inside user doc
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $push: {
+        posts: post._id,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+  //2. add tag to post
+  //Promise.all = stackoverflow.com/questions/40140149/use-async-await-with-array-map
+
+  if (tags) {
+    await Promise.all(
+      tagsArray.map(async (tagName) => {
+        // check if the tag is already created
+        const tag = await Tag.findOne({
+          name: tagName,
+        });
+
+        //stackoverflow.com/questions/11963684/how-to-push-an-array-of-objects-into-an-array-in-mongoose-with-one-call
+        // if created ->find the post and add the tag
+        if (tag) {
+          post = await addTagToPost(post, tag);
+
+          // add the post under the tag
+          await addPostToTag(tag, post);
+        } else {
+          //  if the tag is new then create a new tag
+          const newTag = await Tag.create({ name: tagName });
+
+          // add the tag to the post
+          post = await addTagToPost(post, newTag);
+
+          // add the post under the tag
+          await addPostToTag(newTag, post);
+        }
+      })
+    );
+  }
+  return res.status(200).json(post);
+});
 
 /**
  * @method GET
@@ -190,42 +209,10 @@ export const deletePostById = expressAsyncHandler(async (req: ExtendedRequest, r
   await post.remove();
 
   // delete the file
-  cloudinaryImageId &&
-    cloudinary.uploader.destroy(cloudinaryImageId, (result) => console.log(result));
+  cloudinaryImageId && cloudinary.uploader.destroy(cloudinaryImageId, (result) => console.log(result));
 
   res.status(200).json({ message: "Post removed" });
 });
-
-//! not implemented in this project
-// @ route PUT api/posts/:id
-// @ desc update post by id
-// @ access private
-
-// export const updatePostById = async (req,res) => {
-//   try {
-//     // check auth
-
-//     if (!req.body.content)
-//       return res.status(400).json({ msg: "content is required" });
-
-//     const { id } = req.query;
-
-//     // insert post
-//     // const post: IPost = {
-//     //   userId: req.user.id,
-//     //   content: req.body.content,
-//     // };
-//     // await Post.create(post);
-//     // const post = await Post.findById(id);
-//     return res.status(200).json({ msg: "Update post is not implemented" });
-//   } catch (error) {
-//     return res.status(500).send("server error :(");
-//   }
-// };
-
-// @ route PUT api/posts/:id/rate
-// @ desc rate post by id
-// @ access private
 
 export const ratePostById = expressAsyncHandler(async (req: ExtendedRequest, res: Response) => {
   const authUserId = req.user._id;
@@ -242,13 +229,10 @@ export const ratePostById = expressAsyncHandler(async (req: ExtendedRequest, res
   var option = isLiked ? "$pull" : "$addToSet";
 
   // Insert user like
-  req.user = await User.findByIdAndUpdate(
-    authUserId,
-    { [option]: { likes: postId } },
-    { new: true }
-  );
+  req.user = await User.findByIdAndUpdate(authUserId, { [option]: { likes: postId } }, { new: true });
 
-  if (!isLiked) {
+  //@ts-ignore
+  if (!isLiked && req.user._id.toString() !== post.user._id.toString()) {
     const data = {
       userFrom: req.user._id,
       notificationType: "like",

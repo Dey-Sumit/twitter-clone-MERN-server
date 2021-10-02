@@ -36,10 +36,10 @@ dotenv.config();
 const PORT = process.env.PORT || 4000;
 
 const app = express();
-app.set("trust proxy", 1); // trust first proxy
+//@ts-ignore
+if (process.env.NODE_ENV !== "development") app.set("trust proxy", 1); // trust first proxy
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
- 
   cors: {
     origin: [process.env.CLIENT_URL, "https://admin.socket.io"],
     credentials: true,

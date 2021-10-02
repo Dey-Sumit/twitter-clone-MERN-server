@@ -27,6 +27,9 @@ export const login = expressAsyncHandler(async (req, res, next) => {
 
 export const logout = (req, res) => {
   req.logOut();
+  res.status(200).clearCookie("connect.sid", {
+    path: "/",
+  });
   res.status(204).end();
 };
 
