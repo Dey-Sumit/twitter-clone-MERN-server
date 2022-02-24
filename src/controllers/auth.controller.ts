@@ -47,8 +47,9 @@ export const signup = expressAsyncHandler(async (req, res) => {
   const errors = validationFormatter(req).array();
 
   if (errors.length > 0) {
-    return res.status(422).json(errors[0]);
+    res.status(422).json(errors[0]);
   }
+
   const { name, username, email, password } = req.body;
 
   const emailExists = await User.findOne({ email });
@@ -56,11 +57,11 @@ export const signup = expressAsyncHandler(async (req, res) => {
   const usernameExists = await User.findOne({ username });
 
   if (emailExists) {
-    return res.status(403).json({ message: "Email already exists" });
+    res.status(403).json({ message: "Email already exists" });
   }
 
   if (usernameExists) {
-    return res.status(403).json({ message: "Username already exists" });
+    res.status(403).json({ message: "Username already exists" });
   }
 
   const user = await User.create({ name, username, email, password });

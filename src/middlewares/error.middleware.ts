@@ -21,7 +21,6 @@ export function errorHandler(
   if (err.name == "CastError") message = "Invalid resource Id";
   else message = err.message;
   res.status(statusCode);
-  // console.log("here");
 
   // if (err.kind === "ObjectId")
   //     return res.status(404).json({ msg: "Post not found" });

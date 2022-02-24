@@ -3,8 +3,6 @@ import multer from "multer";
 
 const uploadFile = (): multer.Multer => {
   const checkFileType = (file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    console.log({ file });
-
     const fileTypes = /jpg|jpeg|png|svg/;
 
     const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());

@@ -36,8 +36,10 @@ dotenv.config();
 const PORT = process.env.PORT || 4000;
 
 const app = express();
+
+// tODO : add this conditionally
 //@ts-ignore
-if (process.env.NODE_ENV !== "development") app.set("trust proxy", 1); // trust first proxy
+// if (process.env.NODE_ENV !== "development") app.set("trust proxy", 1); // trust first proxy
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -49,7 +51,7 @@ const io = new Server(httpServer, {
 instrument(io, {
   auth: false,
 });
-app.use(morgan("dev"));
+app.use(morgan("dev")); //TODO : conditionally use morgan dev
 console.log("CLIENT_URL", process.env.CLIENT_URL);
 
 app.use(
@@ -83,7 +85,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 httpServer.listen(PORT, () => {
-  connectDB(); // asyncly connected to db
+  connectDB(); // asyncly connect to db
   log.info(`Server is Running on ${PORT}`);
   socket({ io });
 });

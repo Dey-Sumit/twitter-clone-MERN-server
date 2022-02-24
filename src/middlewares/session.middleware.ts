@@ -14,12 +14,13 @@ export default function sessionMiddleware(req: ExtendedRequest, res: any, next: 
     store: connectMongo.create(options),
     cookie: {},
   };
+  // TODO : add this conditionally
 
-  if (process.env.NODE_ENV !== "development") {
+  /*  if (process.env.NODE_ENV !== "development") {
     sessionOptions.cookie.secure = true;
     sessionOptions.cookie.sameSite = "none";
     sessionOptions.cookie.httpOnly = true;
-  }
+  } */
 
   return session(sessionOptions)(req, res, next);
 }

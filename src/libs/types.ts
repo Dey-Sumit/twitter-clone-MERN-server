@@ -17,6 +17,7 @@ export interface IUser {
   password: string;
   profilePicture: string;
   bio: string;
+  email: string;
   following: mongoose_id[];
   followers: mongoose_id[];
   likes: mongoose_id[];

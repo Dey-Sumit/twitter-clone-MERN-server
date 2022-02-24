@@ -1,13 +1,12 @@
 import { v2 as cloudinary } from "cloudinary";
 import createError from "http-errors";
 import expressAsyncHandler from "express-async-handler";
-import { Response } from "express";
+import { Response, Request } from "express";
 
 import User from "@models/User";
 import { ExtendedRequest } from "@libs/types";
 import Post from "@models/Post";
 import Notification from "@models/Notification";
-import log from "@libs/logger";
 
 export const getTopUsersByFollowers = expressAsyncHandler(async (req: ExtendedRequest, res) => {
   const users = await User.aggregate([
@@ -23,7 +22,7 @@ export const getTopUsersByFollowers = expressAsyncHandler(async (req: ExtendedRe
     { $limit: 10 },
   ]);
 
-  return res.status(200).json(users);
+  res.status(200).json(users);
 });
 
 export const searchUser = expressAsyncHandler(async (req, res) => {
@@ -34,15 +33,16 @@ export const searchUser = expressAsyncHandler(async (req, res) => {
   const searchObj = {
     $or: [{ name: { $regex: q, $options: "i" } }, { username: { $regex: q, $options: "i" } }],
   };
+
   const users = await User.find(searchObj, "profilePicture name username");
   res.status(200).json(users);
 });
 
-export const getUserById = expressAsyncHandler(async (req, res) => {
+export const getUserById = expressAsyncHandler(async (req: ExtendedRequest, res) => {
   const { id } = req.params;
   const user = await User.findById(id);
   if (!user) throw new createError.NotFound();
-  return res.json(user);
+  res.json(user);
 });
 
 export const deleteUserById = expressAsyncHandler(async (req: ExtendedRequest, res) => {
@@ -175,17 +175,17 @@ export const getFollowersById = expressAsyncHandler(async (req, res) => {
   const user = await User.findById(id).populate("followers");
   if (!user) throw new createError.NotFound("User not found");
   const followers = user.followers;
-  return res.json(followers);
+  res.json(followers);
 });
 
 // @ return followers of an user
 // @ api/users/:id/followers
 // @ public
 
-export const getFollowingsById = expressAsyncHandler(async (req, res) => {
+export const getFollowingsById = expressAsyncHandler(async (req: Request, res) => {
   const { id } = req.params;
   const user = await User.findById(id).populate("followings");
   if (!user) throw new createError.NotFound("User not found");
   const followings = user.following; // !following or followings
-  return res.json(followings);
+  res.json(followings);
 });

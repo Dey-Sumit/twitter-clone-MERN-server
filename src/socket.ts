@@ -35,9 +35,6 @@ function socket({ io }: { io: Server }) {
     const userId = socket.handshake.query.userId as string;
     userToSocketMap[userId] = socket.id;
 
-    // var clients = io.allSockets();
-    // console.log({ clients, userToSocketMap });
-
     socket.on(EVENTS.CLIENT.NOTIFY, ({ userTo, message }) => {
       const userToSocket = userToSocketMap[userTo];
       //   console.log("to notify", { userTo, userToSocket });

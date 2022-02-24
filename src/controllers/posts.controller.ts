@@ -24,16 +24,19 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
   const pageNumber = Number(page) || 0;
 
   let posts: IPost[];
+  console.log({ user });
 
-  if (user.following.length === 0) {
+  // if no user is logged in or if the user is not following anyone, return a generic feed
+  if (!user || user?.following.length === 0) {
     posts = await Post.aggregate([{ $sample: { size: 10 } }]);
 
     posts = await Post.populate(posts, { path: "user tags" });
     // console.log({ posts });
 
-    return res.json({
+    res.json({
       posts,
     });
+    return;
   }
 
   const option = req.user
@@ -54,7 +57,7 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
 
     .sort("-createdAt");
 
-  return res.json({
+  res.json({
     posts: posts,
     page: pageNumber,
     pages: Math.ceil(count / pageSize) - 1,
@@ -81,7 +84,7 @@ export const getPostsByUserId = expressAsyncHandler(async (req: ExtendedRequest,
     .populate("tags", "name")
     .sort("-createdAt");
 
-  return res.json({
+  res.json({
     posts: posts,
     page: pageNumber,
     pages: Math.ceil(count / pageSize) - 1,
@@ -168,7 +171,7 @@ export const createPost = expressAsyncHandler(async (req: ExtendedRequest, res, 
       })
     );
   }
-  return res.status(200).json(post);
+  res.status(200).json(post);
 });
 
 /**
@@ -188,7 +191,7 @@ export const getPostById = expressAsyncHandler(async (req, res) => {
     .populate("tags", "name");
 
   if (!post) throw new createError.NotFound();
-  return res.status(200).json(post);
+  res.status(200).json(post);
 });
 
 /**

@@ -4,8 +4,6 @@ import { Error } from "mongoose";
 
 export async function createUser(data: IUser) {
   try {
-    console.log("hello");
-
     return await User.create(data);
   } catch (error) {
     console.error(error.message);
