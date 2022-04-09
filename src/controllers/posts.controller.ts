@@ -13,14 +13,14 @@ import Notification from "@models/Notification";
 /**
  * @desc get user feed posts
    @route GET /api/posts/feed
-   @access private
+   @access private | public
  */
 
 export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => {
   let user: IUser = req.user;
 
   const { page } = req.query;
-  const pageSize = 10;
+  const pageSize = 6;
   const pageNumber = Number(page) || 0;
 
   let posts: IPost[];
@@ -28,7 +28,7 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
 
   // if no user is logged in or if the user is not following anyone, return a generic feed
   if (!user || user?.following.length === 0) {
-    posts = await Post.aggregate([{ $sample: { size: 10 } }]);
+    posts = await Post.aggregate([{ $sample: { size: pageSize } }]);
 
     posts = await Post.populate(posts, { path: "user tags" });
     // console.log({ posts });

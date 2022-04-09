@@ -51,7 +51,7 @@ export const createComment = expressAsyncHandler(async (req: ExtendedRequest, re
   );
 
   const comments = post.populate("comments.user", "username");
-  return res.status(200).json(comments);
+  res.status(200).json(comments);
 });
 
 /**

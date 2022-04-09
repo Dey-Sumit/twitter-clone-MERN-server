@@ -184,7 +184,9 @@ export const getFollowersById = expressAsyncHandler(async (req, res) => {
 
 export const getFollowingsById = expressAsyncHandler(async (req: Request, res) => {
   const { id } = req.params;
-  const user = await User.findById(id).populate("followings");
+  console.log("getFollowingsById", { id });
+
+  const user = await User.findById(id).populate("following");
   if (!user) throw new createError.NotFound("User not found");
   const followings = user.following; // !following or followings
   res.json(followings);
