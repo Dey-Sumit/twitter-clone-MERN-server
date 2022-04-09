@@ -24,14 +24,12 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
   const pageNumber = Number(page) || 0;
 
   let posts: IPost[];
-  console.log({ user });
 
   // if no user is logged in or if the user is not following anyone, return a generic feed
   if (!user || user?.following.length === 0) {
     posts = await Post.aggregate([{ $sample: { size: pageSize } }]);
 
     posts = await Post.populate(posts, { path: "user tags" });
-    // console.log({ posts });
 
     res.json({
       posts,
