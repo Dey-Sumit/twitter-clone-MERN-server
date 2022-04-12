@@ -25,7 +25,7 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
 
   let posts: IPost[];
 
-  // if no user is logged in or if the user is not following anyone, return a generic feed
+  // if no user is logged in or if the user is logged in but not following anyone, return a generic feed
   if (!user || user?.following.length === 0) {
     posts = await Post.aggregate([{ $sample: { size: pageSize } }]);
 
@@ -52,7 +52,6 @@ export const getFeed = expressAsyncHandler(async (req: ExtendedRequest, res) => 
     .skip(pageSize * pageNumber)
     .populate("user", "username name profilePicture")
     .populate("tags", "name")
-
     .sort("-createdAt");
 
   res.json({
